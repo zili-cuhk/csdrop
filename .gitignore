@@ -1,0 +1,15 @@
+# generated data and results
+data/
+results/
+output/
+logs/
+application/out/*
+!application/out/.gitkeep
+application/data/*
+!application/data/cohort_patient_ids.txt
+
+# local files
+__pycache__/
+*.pyc
+.DS_Store
+*.asv

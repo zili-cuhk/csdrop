@@ -1,0 +1,17 @@
+#!/bin/bash
+# Experiment C: Algorithm 1 over tau in {0,0.1,...,0.5} on the Exp A datasets.
+# 24 scenarios x 50 chunks of 10 reps = 1200 tasks, split into two arrays of 600
+# (this file: tasks 601-1200).
+#BSUB -J path2[1-600]
+#BSUB -q short
+#BSUB -W 3:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/path2.%J.%I.out
+#BSUB -e logs/path2.%J.%I.err
+
+module load matlab/R2025b
+TASK=$((LSB_JOBINDEX + 600))
+matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_path_fits($TASK, 'chunk', 10)"

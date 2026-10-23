@@ -1,0 +1,29 @@
+#!/bin/bash
+# Test of the new pipeline on 2 reps of S03 (staggered entry) and S07 (Weibull),
+# 1 rep of H01 (n = 1000, p = 100), and the Liu et al. (2026) fit on A15.
+# Run after cal.lsf.
+#BSUB -J test2
+#BSUB -q short
+#BSUB -W 3:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/test2.%J.out
+#BSUB -e logs/test2.%J.err
+TASK=1
+module load R/4.4.3
+# export R_LIBS=/path/to/your/R/library   (if packages are installed in a personal library)
+for s in S03 S07; do Rscript R/generate.R --sid $s --from 1 --to 2; done
+Rscript R/generate.R --sid H01 --from 1 --to 1
+for s in S03 S07; do Rscript R/run_comparators.R --sid $s --from 1 --to 2; done
+Rscript R/run_comparators.R --sid H01 --from 1 --to 1
+module load matlab/R2025b
+MARK=logs/test2.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_prop_fits(11751, @fit_prop_adapter, 'chunk', 2); run_prop_fits(12751, @fit_prop_adapter, 'chunk', 2); run_prop_fits(3501, @fit_prop_adapter, 'chunk', 2, 'fits', {'LIU2026'}); run_liu_fits(10751, 'chunk', 2); run_prop_fits(22001, @fit_prop_adapter, 'chunk', 1); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

@@ -1,0 +1,22 @@
+#!/bin/bash
+# Liu-style refits with Wald SEs (FULL, PROP, WI, ORACLE) for A01-A36, H01 and
+# S01-S07: 44 cells x 20 chunks of 25 reps = 880 tasks. Run after the prop jobs.
+#BSUB -J liu[1-880]
+#BSUB -q medium
+#BSUB -W 8:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/liu.%J.%I.out
+#BSUB -e logs/liu.%J.%I.err
+TASK=${LSB_JOBINDEX:-1}
+module load matlab/R2025b
+MARK=logs/liu.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_liu_fits($TASK); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

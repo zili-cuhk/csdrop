@@ -1,0 +1,21 @@
+#!/bin/bash
+# TCGA-LUAD bootstrap for Section 6: index 1 = full data (task 0), 2..41 = 200 samples in chunks of 5.
+#BSUB -J tcgaboot[1-41]
+#BSUB -q short
+#BSUB -W 2:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/tcgaboot.%J.%I.out
+#BSUB -e logs/tcgaboot.%J.%I.err
+module load matlab/R2025b
+TASK=$((LSB_JOBINDEX - 1))
+MARK=logs/tcgaboot.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_tcga_boot($TASK); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

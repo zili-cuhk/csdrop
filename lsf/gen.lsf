@@ -1,0 +1,13 @@
+#!/bin/bash
+# Generate all datasets: 32 scenarios x 10 chunks of 50 reps = 320 tasks.
+#BSUB -J gen[1-320]
+#BSUB -q short
+#BSUB -W 0:30
+#BSUB -n 1
+#BSUB -M 4GB
+#BSUB -R "rusage[mem=4GB]"
+#BSUB -o logs/gen.%J.%I.out
+#BSUB -e logs/gen.%J.%I.err
+
+module load R/4.4.3
+Rscript R/generate.R --task "$LSB_JOBINDEX"

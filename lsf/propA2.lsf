@@ -1,0 +1,22 @@
+#!/bin/bash
+# Proposed method (true tau and tau = 0, 0.2, 0.5) and Liu et al. (2026) on the
+# n = 1000 cells A25-A36 (rows 33-44, chunks of 10 reps = tasks 1601-2200).
+#BSUB -J propA2[1-600]
+#BSUB -q medium
+#BSUB -W 8:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/propA2.%J.%I.out
+#BSUB -e logs/propA2.%J.%I.err
+TASK=$((${LSB_JOBINDEX:-1} + 1600))
+module load matlab/R2025b
+MARK=logs/propA2.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_prop_fits($TASK, @fit_prop_adapter, 'chunk', 10, 'fits', {'PROP_T00','PROP_T02','PROP_T05','LIU2026'}); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

@@ -1,0 +1,14 @@
+#!/bin/bash
+# Generate the new cells (A25-A36, H01, S01-S07): rows 33-52 of scenarios.csv,
+# 10 chunks of 50 reps each = generate.R tasks 321-520.
+#BSUB -J gen2[1-200]
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/gen2.%J.%I.out
+#BSUB -e logs/gen2.%J.%I.err
+module load R/4.4.3
+# export R_LIBS=/path/to/your/R/library   (if packages are installed in a personal library)
+Rscript R/generate.R --task $((LSB_JOBINDEX + 320))

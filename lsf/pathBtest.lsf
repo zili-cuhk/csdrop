@@ -1,0 +1,13 @@
+#!/bin/bash
+# Smoke test for Experiment D: B01 (Clayton truth) rep 1 and B03 (Frank, delta = 0.5) rep 1.
+#BSUB -J pathBtest
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/pathBtest.%J.out
+#BSUB -e logs/pathBtest.%J.err
+module load matlab/R2025b
+matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_pathB_fits(1, 'chunk', 1); run_pathB_fits(1001, 'chunk', 1)"

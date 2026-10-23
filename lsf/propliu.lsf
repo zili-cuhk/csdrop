@@ -1,0 +1,22 @@
+#!/bin/bash
+# Liu et al. (2026) comparator on the existing cells A01-A24 and the moderate
+# Exp B cells B01-B04 (rows 1-28, chunks of 25 reps = tasks 1-560).
+#BSUB -J propliu[1-560]
+#BSUB -q medium
+#BSUB -W 8:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/propliu.%J.%I.out
+#BSUB -e logs/propliu.%J.%I.err
+TASK=${LSB_JOBINDEX:-1}
+module load matlab/R2025b
+MARK=logs/propliu.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_prop_fits($TASK, @fit_prop_adapter, 'chunk', 25, 'fits', {'LIU2026'}); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

@@ -1,0 +1,21 @@
+#!/bin/bash
+# Experiment D: (family, tau) grid on the Experiment B datasets; 8 scenarios x 50 chunks of 10 reps = 400 tasks.
+#BSUB -J pathB[1-400]
+#BSUB -q short
+#BSUB -W 3:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/pathB.%J.%I.out
+#BSUB -e logs/pathB.%J.%I.err
+module load matlab/R2025b
+TASK=$LSB_JOBINDEX
+MARK=logs/pathB.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_pathB_fits($TASK, 'chunk', 10); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Proposed-method fits: 32 scenarios x 20 chunks of 25 reps = 640 tasks
+# (chunks of 25 keep the slowest cell, n=600 p=40, well under the 3 h short-queue limit).
+#BSUB -J prop[1-640]
+#BSUB -q short
+#BSUB -W 3:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/prop.%J.%I.out
+#BSUB -e logs/prop.%J.%I.err
+
+module load matlab/R2025b
+matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_prop_fits($LSB_JOBINDEX, @fit_prop_adapter, 'chunk', 25)"

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Threshold sweep for the unpenalized-MLE comparator (thresholds 0.10, 0.20, 0.30),
+# Exp A only: 24 scenarios x 2 chunks of 250 reps = 48 tasks (Exp A scenarios come first).
+#BSUB -J thr[1-48]
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/thr.%J.%I.out
+#BSUB -e logs/thr.%J.%I.err
+
+module load matlab/R2025b
+matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_prop_fits($LSB_JOBINDEX, @fit_prop_adapter, 'chunk', 250, 'fits', {'THR_MLE_010','THR_MLE_020','THR_MLE_030'})"

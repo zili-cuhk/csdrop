@@ -1,0 +1,21 @@
+#!/bin/bash
+# Test of Experiment E with moderate signals: first chunk with 2 replications.
+#BSUB -J expDmtest
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/expDmtest.%J.%I.out
+#BSUB -e logs/expDmtest.%J.%I.err
+module load matlab/R2025b
+TASK=1
+MARK=logs/expDmtest.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_expD_fits(1, 'signal', 'moderate', 'reps', 2); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

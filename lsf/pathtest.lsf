@@ -1,0 +1,14 @@
+#!/bin/bash
+# Smoke test for Experiment C: one dataset (A01 rep 1) over the tau grid, then the TCGA csm_path check.
+#BSUB -J pathtest
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/pathtest.%J.out
+#BSUB -e logs/pathtest.%J.err
+
+module load matlab/R2025b
+matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_path_fits(1, 'chunk', 1)"

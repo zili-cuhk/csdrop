@@ -1,0 +1,22 @@
+#!/bin/bash
+# All MATLAB fits of fit_plan.csv for H01 and S01-S07 (rows 45-52, chunks of
+# 5 reps = tasks 4401-5200).
+#BSUB -J propSH[1-800]
+#BSUB -q medium
+#BSUB -W 8:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/propSH.%J.%I.out
+#BSUB -e logs/propSH.%J.%I.err
+TASK=$((${LSB_JOBINDEX:-1} + 4400))
+module load matlab/R2025b
+MARK=logs/propSH.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_prop_fits($TASK, @fit_prop_adapter, 'chunk', 5); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

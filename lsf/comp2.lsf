@@ -1,0 +1,13 @@
+#!/bin/bash
+# R comparators (CS_LASSO, FG_LASSO) on the new cells: run_comparators.R tasks 321-520.
+#BSUB -J comp2[1-200]
+#BSUB -q medium
+#BSUB -W 8:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/comp2.%J.%I.out
+#BSUB -e logs/comp2.%J.%I.err
+module load R/4.4.3
+# export R_LIBS=/path/to/your/R/library   (if packages are installed in a personal library)
+Rscript R/run_comparators.R --task $((LSB_JOBINDEX + 320))
