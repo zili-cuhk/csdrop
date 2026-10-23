@@ -1,8 +1,8 @@
 # generated data and results
-data/
-results/
-output/
-logs/
+/data/
+/results/
+/output/
+/logs/
 application/out/*
 !application/out/.gitkeep
 application/data/*
