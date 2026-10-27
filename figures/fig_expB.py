@@ -31,7 +31,7 @@ for j, (col, title) in enumerate(panels):
         for o in order:
             if o in T.index and np.isfinite(T.loc[o, col]):
                 ys.append(ypos[o] + offs[m]); xs.append(T.loc[o, col])
-        ax[j].plot(xs, ys, ls='none', marker=mk, color=c, ms=3.6, mfc=c if m == 'Proposed' else 'white', mew=0.9, label=m)
+        ax[j].plot(xs, ys, ls='none', marker=mk, color=c, ms=3.6, mfc=c if m == 'Proposed' else 'white', mew=0.9, label={'WI': 'HDCR', 'Proposed': 'copHCR'}.get(m, m))
     ax[j].set_title(title, fontsize=8.5)
     ax[j].set_ylim(-0.6, len(order) - 0.4)
     ax[j].grid(axis='x', color='0.88', lw=0.5)

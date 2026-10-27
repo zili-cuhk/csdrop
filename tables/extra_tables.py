@@ -28,8 +28,9 @@ cnt=D.groupby(['method','sid']).rep.nunique()
 print(cnt.groupby('method').agg(['min','max']))
 meths=['Lasso','Two-margin','WI','Proposed']
 T=T[meths]; print(T.round(3)); print((T['WI']/T['Proposed']).round(3))
+LAB={'WI':'HDCR','Proposed':'copHCR'}
 L=[r'\begin{tabular}{rr'+'r'*len(meths)+'r}',r'\toprule',
-   r'$\tau_0$ & $n$ & '+' & '.join(meths)+r' & WI/Proposed\\',r'\midrule']
+   r'$\tau_0$ & $n$ & '+' & '.join(LAB.get(m,m) for m in meths)+r' & HDCR/copHCR\\',r'\midrule']
 for i,t in enumerate((0.0,0.2,0.5)):
     if i: L.append(r'\addlinespace')
     for j,n in enumerate((400,600,1000)):

@@ -21,6 +21,8 @@ function run_liu_fits(task, varargin)
 %
 %   run_liu_fits(task)                      task = 1 .. 44 * ceil(500 / chunk)
 %   run_liu_fits(task, 'chunk', 25, 'crit', 'EBIC0.25')
+%   run_liu_fits(task, 'exps', {'P'}, 'fits', {'PROP', 'WI', 'ORACLE'}, 'chunk', 10)
+%       (larger-dimension cells P01-P36; the full model is not fitted)
 %
 %   Output: results/liu/liu_<sid>_<from>.csv with one row per
 %   (rep, fit, margin) and columns sid rep fit margin status support
@@ -30,12 +32,13 @@ addParameter(ip, 'root', '.');
 addParameter(ip, 'chunk', 25);
 addParameter(ip, 'crit', 'EBIC0.25');
 addParameter(ip, 'fits', {'FULL', 'PROP', 'WI', 'ORACLE'});
+addParameter(ip, 'exps', {'A', 'H', 'S'});
 parse(ip, varargin{:});
 root = ip.Results.root; chunk = ip.Results.chunk; crit = string(ip.Results.crit);
 fits = string(ip.Results.fits);
 
 S = read_text_table(fullfile(root, 'scenarios.csv'));
-S = S(ismember(S.exp, ["A" "H" "S"]), :);
+S = S(ismember(S.exp, string(ip.Results.exps)), :);
 Rn = str2double(S.R);
 nch = ceil(Rn / chunk); cs = cumsum(nch);
 s = find(task <= cs, 1);

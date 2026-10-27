@@ -16,6 +16,16 @@ function run_expF_fits(task, varargin)
 %   Scenarios: Experiment A with n = 600, p = 10, both signal levels and
 %   tau0 in {0.2, 0.5}, taken from scenarios.csv. Output:
 %   results/expF/expF_<sid>_<rep>.csv, one row per (cause, time).
+%
+%   Options for the follow-up experiments of the revision
+%     'tag'   output folder and file prefix (default 'expF')
+%     'n'     sample sizes of the Experiment A cells used (default 600)
+%     'taus'  true tau0 values of the cells used (default [0.2 0.5])
+%     'B'     0 skips the bootstrap (standard-error columns are NaN)
+%   Experiment G (near ties, Theorem 4(v)):
+%     run_expF_fits(task, 'tag', 'expG', 'tauGrid', [0.4 0.45 0.5], 'taus', 0.5)
+%   Experiment H (grid refinement, Theorem 5):
+%     run_expF_fits(task, 'tag', 'expH', 'B', 0, 'tauGrid', 0:0.025:0.5, 'n', [600 1000])
 ip = inputParser;
 addParameter(ip, 'root', '.');
 addParameter(ip, 'B', 100);
@@ -23,13 +33,17 @@ addParameter(ip, 'tauGrid', [0 0.25 0.5]);
 addParameter(ip, 'times', [1 2 4 6]);
 addParameter(ip, 'reps', 200);
 addParameter(ip, 'gE', 0.25);
+addParameter(ip, 'tag', 'expF');
+addParameter(ip, 'n', 600);
+addParameter(ip, 'taus', [0.2 0.5]);
 parse(ip, varargin{:});
+tag = char(ip.Results.tag);
 root = ip.Results.root; Bn = ip.Results.B; tauGrid = ip.Results.tauGrid;
 times = ip.Results.times(:)'; nt = numel(times); G = numel(tauGrid); gE = ip.Results.gE;
 
 S = read_text_table(fullfile(root, 'scenarios.csv'));
-S = S(S.exp == "A" & str2double(S.n) == 600 & str2double(S.p) == 10 & ...
-      ismember(round(str2double(S.tau) * 10), [2 5]), :);
+S = S(S.exp == "A" & ismember(str2double(S.n), ip.Results.n) & str2double(S.p) == 10 & ...
+      ismember(round(str2double(S.tau) * 100), round(100 * ip.Results.taus)), :);
 nsc = height(S); R = ip.Results.reps;
 if task < 1 || task > nsc * R, error('task must be in 1..%d', nsc * R); end
 s = ceil(task / R); rep = task - (s - 1) * R;
@@ -37,7 +51,7 @@ sid = S.sid(s); signal = S.signal(s); p = str2double(S.p(s));
 Btrue = sim_coefs(signal, p);
 K = 2; cuts = [0 1 2 Inf];
 opt = csm_options('eta', 0.05, 'gE', [0 0.25 0.5]);
-outdir = fullfile(root, 'results', 'expF');
+outdir = fullfile(root, 'results', tag);
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 
 dat = sim_read_dataset(root, sid, rep);
@@ -55,11 +69,15 @@ for b = 1:Bn
     idx = randi(rs, n, n, 1);
     Fb(:, :, :, b) = grid_cifs(dat.Y, dat.status, dat.Z, idx);
 end
-ok = squeeze(all(all(all(~isnan(Fb), 1), 2), 3));
-Fb = Fb(:, :, :, ok); nok = sum(ok);
-if nok < 10, error('only %d admissible bootstrap samples', nok); end
-Lb = squeeze(min(Fb, [], 3)); Ub = squeeze(max(Fb, [], 3));  % K x nt x nok
-seL = std(Lb, 0, 3); seU = std(Ub, 0, 3); seG = std(Fb, 0, 4);
+if Bn > 0
+    ok = reshape(all(all(all(~isnan(Fb), 1), 2), 3), [], 1);
+    Fb = Fb(:, :, :, ok); nok = sum(ok);
+    if nok < 10, error('only %d admissible bootstrap samples', nok); end
+    Lb = reshape(min(Fb, [], 3), K, nt, nok); Ub = reshape(max(Fb, [], 3), K, nt, nok);
+    seL = std(Lb, 0, 3); seU = std(Ub, 0, 3); seG = std(Fb, 0, 4);
+else                                                      % no bootstrap
+    nok = 0; seL = nan(K, nt); seU = nan(K, nt); seG = nan(K, nt, G);
+end
 [Lf, gL] = min(Ffull, [], 3); [Uf, gU] = max(Ffull, [], 3);
 
 hdr = ["sid" "rep" "cause" "t" compose("F_g%d", 1:G) "L" "U" "gL" "gU" "seL" "seU" ...
@@ -75,7 +93,7 @@ for k = 1:K
     end
 end
 T = array2table(rows, 'VariableNames', cellstr(hdr));
-writetable(T, fullfile(outdir, sprintf('expF_%s_%04d.csv', sid, rep)));
+writetable(T, fullfile(outdir, sprintf('%s_%s_%04d.csv', tag, sid, rep)));
 fprintf('%s rep %d written (%d of %d bootstrap samples admissible)\n', sid, rep, nok, Bn);
 
     function F = grid_cifs(Y, st, Z, idx)

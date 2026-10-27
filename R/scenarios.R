@@ -57,6 +57,16 @@ build_scenarios <- function(R = 500) {
                    f2 = f$f2, baseline = f$baseline, admin = f$admin,
                    target_C = f$target_C, target_A = f$target_A, stringsAsFactors = FALSE)
   S <- rbind(S, N, S2)
+  ## Larger dimension (sids P01-P36): the primary grid with p in {100, 200}.
+  ## Appended last, so the sids and seeds of all earlier rows are unchanged.
+  P <- expand.grid(tau = c(0, 0.2, 0.5), signal = c("moderate", "strong"),
+                   p = c(100, 200), n = c(400, 600, 1000), stringsAsFactors = FALSE)
+  P <- data.frame(exp = "P", n = P$n, p = P$p, signal = P$signal,
+                  family = "frank", tau = P$tau, delta = 0, stringsAsFactors = FALSE)
+  key <- match(paste(P$signal, P$tau), paste(FROZEN$signal, FROZEN$tau))
+  P$mC <- FROZEN$mC[key]; P$a <- FROZEN$a[key]
+  P$f2 <- 1; P$baseline <- "pc"; P$admin <- "fixed"; P$target_C <- 0.20; P$target_A <- 0.15
+  S <- rbind(S, P)
 
   S$sid <- sprintf("%s%02d", S$exp, ave(seq_len(nrow(S)), S$exp, FUN = seq_along))
   S$R <- R

@@ -1,0 +1,34 @@
+#!/bin/bash
+# Smoke test and timing for the larger-dimension cells (Experiment P).
+# Uses the slowest cell, P33 (n = 1000, p = 200, moderate signal, tau0 = 0.5):
+# generates reps 1-50, then runs every P fit on reps 1-2. Check logs/largeptest.*.out
+# for the seconds per fit before submitting propP and liuP.
+#BSUB -J largeptest
+#BSUB -q medium
+#BSUB -W 12:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/largeptest.%J.out
+#BSUB -e logs/largeptest.%J.err
+
+module load R/4.4.3
+module load matlab/R2025b
+set -x
+# P33 is the 33rd P cell, so generate.R task 321 (chunks of 50) writes reps 1-50
+Rscript R/generate.R --task 321 --exp P --digits 8
+du -sh data/P33
+time Rscript R/run_comparators.R --sid P33 --from 1 --to 2 --methods CS_LASSO
+# run_prop_fits with chunk 1: task 16001 is P33 rep 1 (32 cells x 500 reps before it)
+time matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_prop_fits(16001, @fit_prop_adapter, 'exp', 'P', 'chunk', 1); run_prop_fits(16002, @fit_prop_adapter, 'exp', 'P', 'chunk', 1)"
+time matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_liu_fits(16001, 'exps', {'P'}, 'fits', {'PROP','WI','ORACLE'}, 'chunk', 1); run_liu_fits(16002, 'exps', {'P'}, 'fits', {'PROP','WI','ORACLE'}, 'chunk', 1)"
+head -3 results/prop/sel_PROP_TRUE_P33_0001.csv
+cut -d, -f1-5,9- results/liu/liu_P33_0001.csv | head -12
+# seconds per (rep, fit, criterion): columns 2, 3, 4 and 9 of the selection files
+for f in results/prop/sel_PROP_T*_P33_000[12].csv; do echo $f; cut -d, -f2,3,4,9 $f | sort -u; done
+cut -d, -f2,9 results/comp/sel_CS_LASSO_P33_0001.csv | sort -u
+# move the test outputs aside so they do not mix with the production chunks
+mkdir -p results/largeptest
+mv results/prop/*_P33_000[12].csv results/liu/liu_P33_000[12].csv results/comp/*_CS_LASSO_P33_0001.csv results/largeptest/

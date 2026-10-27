@@ -16,8 +16,8 @@ STY = {  # label, color, marker, linestyle
     'Full': ('Full', '#7f7f7f', 'x', ':'),
     'Lasso': ('Lasso', '#1b9e77', 's', '--'),
     'Liu': ('Two-margin', '#7570b3', '^', '-.'),
-    'WI': ('WI', '#d95f02', 'D', '-'),
-    'Proposed': ('Proposed', '#000000', 'o', '-'),
+    'WI': ('HDCR', '#d95f02', 'D', '-'),
+    'Proposed': ('copHCR', '#000000', 'o', '-'),
 }
 cols = [(10, 0.2), (10, 0.5), (40, 0.2), (40, 0.5)]
 R = str(RES)
@@ -61,7 +61,7 @@ for c, (p, tau) in enumerate(cols):
     ax[2, c].set_xlabel('$n$')
 ax[0, 0].set_ylabel('Pcorr of the\njoint support')
 ax[1, 0].set_ylabel('MSE relative\nto the oracle')
-ax[2, 0].set_ylabel('CIF error relative\nto the proposed method')
+ax[2, 0].set_ylabel('CIF error relative\nto copHCR')
 h, l = ax[1, 0].get_legend_handles_labels()
 fig.legend(h, l, loc='lower center', ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.01))
 fig.tight_layout(rect=(0, 0.045, 1, 1), w_pad=0.6, h_pad=0.8)

@@ -83,6 +83,11 @@ s.append(r'\begin{footnotesize}\setlength{\tabcolsep}{4pt}' '\n' +
          r'\end{footnotesize}' '\n')
 open(f'{OUT}/supp_tables.tex', 'w').write('\n'.join(s))
 print('done')
-# method label used in the manuscript
+# method labels used in the manuscript: Two-margin (Liu et al., 2026), HDCR (the
+# proposed method under working independence) and copHCR (the proposed method)
+def relabel(t):
+    t = t.replace('Liu2026', 'Two-margin')
+    t = re.sub(r'(?<![A-Za-z])WI(?![A-Za-z])', 'HDCR', t)
+    return re.sub(r'(?<![A-Za-z])Proposed(?![A-Za-z])', 'copHCR', t)
 for fn in ('tab_main_sel.tex', 'tab_main_expB.tex', 'supp_tables.tex'):
-    t = open(f'{OUT}/{fn}').read().replace('Liu2026', 'Two-margin'); open(f'{OUT}/{fn}', 'w').write(t)
+    t = relabel(open(f'{OUT}/{fn}').read()); open(f'{OUT}/{fn}', 'w').write(t)

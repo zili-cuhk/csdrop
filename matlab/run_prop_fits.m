@@ -4,6 +4,8 @@ function run_prop_fits(task, fitfun, varargin)
 %
 %   run_prop_fits(task, @fit_prop_adapter)
 %   run_prop_fits(task, @fit_prop_adapter, 'root', '.', 'chunk', 50, 'fits', {'PROP_T00'})
+%   run_prop_fits(task, @fit_prop_adapter, 'exp', 'P', 'chunk', 10)
+%       (task index within the scenarios of experiment P only)
 %
 %   TASK is the LSF array index; the task-to-(scenario, reps) rule is the same
 %   as task_map() in R/dgp.R. FITFUN is a handle with signature
@@ -14,11 +16,15 @@ ip = inputParser;
 addParameter(ip, 'root', '.');
 addParameter(ip, 'chunk', 50);
 addParameter(ip, 'fits', {});
+addParameter(ip, 'exp', '');
 parse(ip, varargin{:});
 root = ip.Results.root;
 chunk = ip.Results.chunk;
 
 S = read_text_table(fullfile(root, 'scenarios.csv'));
+if ~isempty(ip.Results.exp)
+    S = S(ismember(S.exp, string(ip.Results.exp)), :);
+end
 plan = read_text_table(fullfile(root, 'fit_plan.csv'));
 Rn = str2double(S.R);
 [s, from, to] = task_map(task, Rn, chunk);

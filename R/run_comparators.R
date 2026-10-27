@@ -1,6 +1,6 @@
 ## run_comparators.R -- fit CS_LASSO and FG_LASSO on saved datasets.
 ## Usage:
-##   Rscript R/run_comparators.R --task K
+##   Rscript R/run_comparators.R --task K [--exp P]
 ##   Rscript R/run_comparators.R --sid A01 --from 1 --to 50 [--methods CS_LASSO,FG_LASSO]
 ## Output: results/comp/{sel,cif}_<fit_id>_<sid>_<from>.csv
 
@@ -9,6 +9,7 @@ source("R/scenarios.R")
 source("R/comparators.R")
 S <- read_scenarios()
 args <- parse_args()
+if (!is.null(args$exp)) S <- S[S$exp %in% strsplit(args$exp, ",")[[1]], ]
 
 if (!is.null(args$task)) {
   tm <- task_map(as.integer(args$task), S)

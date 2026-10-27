@@ -1,0 +1,23 @@
+#!/bin/bash
+# Refits with Wald SEs (PROP = copHCR, WI = HDCR, ORACLE) on P01-P36, after all
+# propP tasks have finished: 36 cells x 50 chunks of 10 reps = 1800 tasks.
+#   for o in 0 900; do OFFSET=$o bsub < lsf/liuP.lsf; done
+#BSUB -J liuP[1-900]
+#BSUB -q medium
+#BSUB -W 24:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/liuP.%J.%I.out
+#BSUB -e logs/liuP.%J.%I.err
+TASK=$((${LSB_JOBINDEX:-1} + ${OFFSET:-0}))
+module load matlab/R2025b
+MARK=logs/liuP.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_liu_fits($TASK, 'exps', {'P'}, 'fits', {'PROP','WI','ORACLE'}, 'chunk', 10); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"

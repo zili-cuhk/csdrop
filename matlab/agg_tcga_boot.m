@@ -10,8 +10,14 @@ function S = agg_tcga_boot(varargin)
 %   frequency of membership in the bootstrap robust and possible supports,
 %   frequency with which a bootstrap support equals the full-data support,
 %   bootstrap standard errors of the CIF bounds, Imbens-Manski intervals
-%   (Imbens and Manski, 2004; Stoye, 2009), and the conservative interval of
-%   Remark 1 (min/max of pointwise 95% limits over the grid).
+%   (Imbens and Manski, 2004; Stoye, 2009), and the envelope interval of
+%   Theorem 4(v) (min/max of the pointwise 95% limits over the grid).
+%   Both intervals are also given with the normalized interquartile range
+%   (q75 - q25) / 1.349 of the bootstrap replicates as the standard error,
+%   which is consistent without uniform integrability of the bootstrap
+%   replicates (Web Appendix S10).
+%   Output columns of summary_cif_<family>.csv: cause time L U seL seU IM_lo
+%   IM_hi env_lo env_hi seL_iqr seU_iqr IMiqr_lo IMiqr_hi enviqr_lo enviqr_hi B_ok.
 ip = inputParser;
 addParameter(ip, 'root', '.');
 addParameter(ip, 'family', "frank");
@@ -94,17 +100,9 @@ eqR = mean(all(all(SRb == SRfull, 1), 2)); eqP = mean(all(all(SPb == SPfull, 1),
 Lb = squeeze4(Lb); Ub = squeeze4(Ub);
 sameArg = min(mean(squeeze4(gLb) == gLf, 3), mean(squeeze4(gUb) == gUf, 3));
 seL = std(Lb, 0, 3); seU = std(Ub, 0, 3); seG = std(Fb, 0, 4);  % seG: K x nt x G
-Phi = @(x) 0.5 * erfc(-x / sqrt(2)); z = sqrt(2) * erfcinv(alpha);
-IMlo = nan(K, nt); IMhi = nan(K, nt); CNlo = nan(K, nt); CNhi = nan(K, nt);
-for k = 1:K
-    for t = 1:nt
-        s = max(seL(k, t), seU(k, t)); dlt = max(Uf(k, t) - Lf(k, t), 0);
-        c = fzero(@(c) Phi(c + dlt / s) - Phi(-c) - (1 - alpha), [0, z + 1]);
-        IMlo(k, t) = Lf(k, t) - c * seL(k, t); IMhi(k, t) = Uf(k, t) + c * seU(k, t);
-        CNlo(k, t) = min(squeeze(Ffull(k, t, :) - z * seG(k, t, :)));
-        CNhi(k, t) = max(squeeze(Ffull(k, t, :) + z * seG(k, t, :)));
-    end
-end
+qL = iqrse(Lb, 3); qU = iqrse(Ub, 3); qG = iqrse(Fb, 4);
+[IMlo, IMhi, ENVlo, ENVhi] = intervals(Lf, Uf, Ffull, seL, seU, seG, alpha);
+[IQlo, IQhi, EQlo, EQhi] = intervals(Lf, Uf, Ffull, qL, qU, qG, alpha);
 
 % ---- print
 fprintf('Family %s: %d bootstrap samples read, %d with admissible fits at all %d grid values\n', famSel, nb, nok, G);
@@ -121,8 +119,10 @@ end
 fprintf('Share of samples with the same argmin and argmax as the full data: %.3f\n', min(sameArg(:)));
 for k = 1:K
     for t = 1:nt
-        fprintf('cause %d t%d: bounds [%.3f, %.3f]  se (%.4f, %.4f)  IM [%.3f, %.3f]  conservative [%.3f, %.3f]\n', ...
-            k, t, Lf(k, t), Uf(k, t), seL(k, t), seU(k, t), IMlo(k, t), IMhi(k, t), CNlo(k, t), CNhi(k, t));
+        fprintf('cause %d t%d: bounds [%.3f, %.3f]  se (%.4f, %.4f)  IM [%.3f, %.3f]  envelope [%.3f, %.3f]\n', ...
+            k, t, Lf(k, t), Uf(k, t), seL(k, t), seU(k, t), IMlo(k, t), IMhi(k, t), ENVlo(k, t), ENVhi(k, t));
+        fprintf('             IQR se (%.4f, %.4f)  IM [%.3f, %.3f]  envelope [%.3f, %.3f]\n', ...
+            qL(k, t), qU(k, t), IQlo(k, t), IQhi(k, t), EQlo(k, t), EQhi(k, t));
     end
 end
 
@@ -136,18 +136,52 @@ for m = 1:D1
 end
 TF = array2table(R, 'VariableNames', [{'margin', 'covariate'}, cellstr("sel_" + matlab.lang.makeValidName(spec')), {'robust', 'possible'}]);
 writetable(TF, fullfile(dirr, sprintf('summary_freq_%s.csv', famSel)));
-R = strings(0, 11);
+R = strings(0, 17);
 for k = 1:K
     for t = 1:nt
         R(end + 1, :) = [string(k), string(t), compose("%.4f", [Lf(k, t) Uf(k, t) seL(k, t) seU(k, t) ...
-            IMlo(k, t) IMhi(k, t) CNlo(k, t) CNhi(k, t)]), string(nok)]; %#ok<AGROW>
+            IMlo(k, t) IMhi(k, t) ENVlo(k, t) ENVhi(k, t) qL(k, t) qU(k, t) ...
+            IQlo(k, t) IQhi(k, t) EQlo(k, t) EQhi(k, t)]), string(nok)]; %#ok<AGROW>
     end
 end
-TC = array2table(R, 'VariableNames', {'cause', 'time', 'L', 'U', 'seL', 'seU', 'IM_lo', 'IM_hi', 'cons_lo', 'cons_hi', 'B_ok'});
+TC = array2table(R, 'VariableNames', {'cause', 'time', 'L', 'U', 'seL', 'seU', 'IM_lo', 'IM_hi', ...
+    'env_lo', 'env_hi', 'seL_iqr', 'seU_iqr', 'IMiqr_lo', 'IMiqr_hi', 'enviqr_lo', 'enviqr_hi', 'B_ok'});
 writetable(TC, fullfile(dirr, sprintf('summary_cif_%s.csv', famSel)));
 S = struct('freq', freq, 'freqR', freqR, 'freqP', freqP, 'eqG', eqG, 'eqR', eqR, 'eqP', eqP, ...
-    'L', Lf, 'U', Uf, 'seL', seL, 'seU', seU, 'IMlo', IMlo, 'IMhi', IMhi, 'CNlo', CNlo, 'CNhi', CNhi, ...
+    'L', Lf, 'U', Uf, 'seL', seL, 'seU', seU, 'IMlo', IMlo, 'IMhi', IMhi, 'ENVlo', ENVlo, 'ENVhi', ENVhi, ...
+    'seLiqr', qL, 'seUiqr', qU, 'IMiqrlo', IQlo, 'IMiqrhi', IQhi, 'ENViqrlo', EQlo, 'ENViqrhi', EQhi, ...
     'nb', nb, 'nok', nok, 'spec', spec);
+end
+
+function [IMlo, IMhi, ENVlo, ENVhi] = intervals(Lf, Uf, Ffull, seL, seU, seG, alpha)
+% Imbens-Manski intervals for a point in [L, U] and the envelope interval.
+[K, nt] = size(Lf);
+Phi = @(x) 0.5 * erfc(-x / sqrt(2)); z = sqrt(2) * erfcinv(alpha);
+IMlo = nan(K, nt); IMhi = nan(K, nt); ENVlo = nan(K, nt); ENVhi = nan(K, nt);
+for k = 1:K
+    for t = 1:nt
+        s = max(seL(k, t), seU(k, t)); dlt = max(Uf(k, t) - Lf(k, t), 0);
+        c = fzero(@(c) Phi(c + dlt / s) - Phi(-c) - (1 - alpha), [0, z + 1]);
+        IMlo(k, t) = Lf(k, t) - c * seL(k, t); IMhi(k, t) = Uf(k, t) + c * seU(k, t);
+        ENVlo(k, t) = min(squeeze(Ffull(k, t, :) - z * seG(k, t, :)));
+        ENVhi(k, t) = max(squeeze(Ffull(k, t, :) + z * seG(k, t, :)));
+    end
+end
+end
+
+function s = iqrse(A, d)
+% Normalized interquartile range along dimension d (linear interpolation
+% between order statistics, as numpy.quantile), base MATLAB only.
+A = sort(A, d); m = size(A, d);
+q = @(pr) interp(A, d, 1 + pr * (m - 1));
+s = (q(0.75) - q(0.25)) / 1.3489795;
+end
+
+function v = interp(A, d, h)
+lo = floor(h); hi = min(lo + 1, size(A, d)); w = h - lo;
+idx = repmat({':'}, 1, ndims(A));
+idx{d} = lo; a = A(idx{:}); idx{d} = hi; b = A(idx{:});
+v = (1 - w) * a + w * b;
 end
 
 function A = squeeze4(A)

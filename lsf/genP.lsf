@@ -1,0 +1,14 @@
+#!/bin/bash
+# Datasets for the larger-dimension cells P01-P36: 36 cells x 10 chunks of 50 reps.
+# Covariates are written with 8 significant digits (about 20 GB in total).
+#BSUB -J genP[1-360]
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 4GB
+#BSUB -R "rusage[mem=4GB]"
+#BSUB -o logs/genP.%J.%I.out
+#BSUB -e logs/genP.%J.%I.err
+
+module load R/4.4.3
+Rscript R/generate.R --task "$LSB_JOBINDEX" --exp P --digits 8

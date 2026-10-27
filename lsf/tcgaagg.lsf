@@ -1,0 +1,15 @@
+#!/bin/bash
+# Re-summarize the existing TCGA-LUAD bootstrap output (results/tcga_boot) with the
+# envelope interval of Theorem 4(v) and IQR-based standard errors. No refitting.
+#BSUB -J tcgaagg
+#BSUB -q medium
+#BSUB -W 4:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/tcgaagg.%J.out
+#BSUB -e logs/tcgaagg.%J.err
+module load matlab/R2025b
+matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); agg_tcga_boot(); agg_tcga_boot('family', \"all\");"
+cat results/tcga_boot/summary_cif_frank.csv

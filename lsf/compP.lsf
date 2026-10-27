@@ -1,0 +1,13 @@
+#!/bin/bash
+# Cause-specific Cox lasso (CS_LASSO) on P01-P36: 36 cells x 10 chunks of 50 reps.
+#BSUB -J compP[1-360]
+#BSUB -q short
+#BSUB -W 3:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/compP.%J.%I.out
+#BSUB -e logs/compP.%J.%I.err
+
+module load R/4.4.3
+Rscript R/run_comparators.R --task "$LSB_JOBINDEX" --exp P --methods CS_LASSO
