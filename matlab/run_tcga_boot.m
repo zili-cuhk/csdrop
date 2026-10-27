@@ -14,6 +14,12 @@ function run_tcga_boot(task, varargin)
 %   run_tcga_boot(task, 'cuts', [2.646546339 7.489232995 12 18 30], 'tag', 'p5')   finer partition
 %
 %   Output: results/tcga_boot/boot_<first b>.csv, one row per (b, family, tau).
+%
+%   Other cohorts (same columns Y, status, covariates):
+%   run_tcga_boot(task, 'data', 'application/hrs/data/hrs_main.csv', ...
+%       'cutsfile', 'application/hrs/data/hrs_cuts.csv', 'out', 'hrs_boot', ...
+%       'tauGrid', [-0.2 0 0.2 0.4 0.6], 'times', [2 5 10 15], 'chunk', 2)
+%   Without an index file the samples come from a fixed RandStream.
 ip = inputParser;
 addParameter(ip, 'root', '.');
 addParameter(ip, 'chunk', 5);
@@ -23,25 +29,30 @@ addParameter(ip, 'times', [12 24 36]);
 addParameter(ip, 'gE', 0.25);
 addParameter(ip, 'cuts', []);      % internal cutpoints; [] = application/data/tcga_exclude_unknown_cuts.csv
 addParameter(ip, 'tag', '');       % output subfolder suffix, e.g. 'p5'
+addParameter(ip, 'data', fullfile('application', 'data', 'tcga_exclude_unknown.csv'));
+addParameter(ip, 'cutsfile', fullfile('application', 'data', 'tcga_exclude_unknown_cuts.csv'));
+addParameter(ip, 'idxfile', fullfile('application', 'data', 'tcga_boot_idx.csv'));
+addParameter(ip, 'out', 'tcga_boot');   % results/<out>
+addParameter(ip, 'B', 200);
 parse(ip, varargin{:});
 root = ip.Results.root; chunk = ip.Results.chunk;
 fams = string(ip.Results.families); tauGrid = ip.Results.tauGrid;
 times = ip.Results.times(:)'; nt = numel(times); gE = ip.Results.gE;
 
-D = readmatrix(fullfile(root, 'application', 'data', 'tcga_exclude_unknown.csv'), 'NumHeaderLines', 1);
+D = readmatrix(fullfile(root, ip.Results.data), 'NumHeaderLines', 1);
 if isempty(ip.Results.cuts)
-    c = readmatrix(fullfile(root, 'application', 'data', 'tcga_exclude_unknown_cuts.csv'));
+    c = readmatrix(fullfile(root, ip.Results.cutsfile));   % one line, no header
 else
     c = ip.Results.cuts;
 end
 cuts = [0 c(:)' Inf];
 n = size(D, 1);
-fidx = fullfile(root, 'application', 'data', 'tcga_boot_idx.csv');
+fidx = fullfile(root, ip.Results.idxfile);
 if exist(fidx, 'file')
     IDX = readmatrix(fidx);                 % same indices as the Python run
 else
     rs = RandStream('mt19937ar', 'Seed', 20261013);
-    IDX = randi(rs, n, n, 200);             % deterministic, identical in every task
+    IDX = randi(rs, n, n, ip.Results.B);    % deterministic, identical in every task
 end
 Bmax = size(IDX, 2);
 if size(IDX, 1) ~= n, error('index file has %d rows, data have %d', size(IDX, 1), n); end
@@ -53,7 +64,7 @@ else
 end
 K = 2;
 opt = csm_options('eta', 0.05, 'gE', [0 0.25 0.5]);
-outdir = fullfile(root, 'results', 'tcga_boot');
+outdir = fullfile(root, 'results', ip.Results.out);
 if ~isempty(ip.Results.tag), outdir = [outdir '_' ip.Results.tag]; end
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 

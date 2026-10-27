@@ -1,6 +1,8 @@
 function S = agg_tcga_boot(varargin)
 %AGG_TCGA_BOOT Summaries of run_tcga_boot for Section 6 (Tables 4 and 5).
 %   S = agg_tcga_boot()                       Frank grid only
+%   S = agg_tcga_boot('dir', 'results/hrs_boot', 'data', 'application/hrs/data/hrs_main.csv', ...
+%       'margins', ["Dementia" "Death without dementia" "Dropout"])   another cohort
 %   S = agg_tcga_boot('family', "all")        intersection/union over all
 %                                             (family, tau) pairs that were run
 %   Reads results/tcga_boot/boot_*.csv (b = 0 is the full data) and writes
@@ -23,10 +25,14 @@ addParameter(ip, 'root', '.');
 addParameter(ip, 'family', "frank");
 addParameter(ip, 'alpha', 0.05);
 addParameter(ip, 'tag', '');
+addParameter(ip, 'dir', '');       % results folder, e.g. 'results/hrs_boot'
+addParameter(ip, 'data', '');      % cohort csv whose header names the covariates
+addParameter(ip, 'margins', ["Recorded PFS event" "Death without earlier PFS" "Dropout"]);
 parse(ip, varargin{:});
 root = ip.Results.root; famSel = string(ip.Results.family); alpha = ip.Results.alpha;
 dirr = fullfile(root, 'results', 'tcga_boot');
 if ~isempty(ip.Results.tag), dirr = [dirr '_' ip.Results.tag]; end
+if ~isempty(ip.Results.dir), dirr = fullfile(root, ip.Results.dir); end
 fl = dir(fullfile(dirr, 'boot_*.csv'));
 if isempty(fl), error('no files in %s', dirr); end
 T = [];
@@ -39,7 +45,11 @@ if famSel ~= "all", T = T(T.family == famSel, :); end
 if isempty(T), error('no rows for family %s', famSel); end
 
 names = ["Age per 10 years" "Male sex" "Stage II" "Stage III-IV" "Node-positive" "T3-T4"];
-margins = ["Recorded PFS event" "Death without earlier PFS" "Dropout"];
+if ~isempty(ip.Results.data)
+    fid = fopen(fullfile(root, ip.Results.data)); h = strsplit(strtrim(fgetl(fid)), ','); fclose(fid);
+    names = string(strrep(h(3:end), '"', ''));
+end
+margins = string(ip.Results.margins);
 p = numel(names); D1 = 3; K = 2;
 fc = startsWith(T.Properties.VariableNames, 'F1_');
 nt = sum(fc);

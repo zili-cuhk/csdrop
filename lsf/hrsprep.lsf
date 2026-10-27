@@ -1,0 +1,16 @@
+#!/bin/bash
+# HRS application: build the analysis cohort from the RAND HRS file and the
+# Langa-Weir classification placed in application/hrs/data/ (see README).
+#BSUB -J hrsprep
+#BSUB -q medium
+#BSUB -W 4:00
+#BSUB -n 1
+#BSUB -M 16GB
+#BSUB -R "rusage[mem=16GB]"
+#BSUB -o logs/hrsprep.%J.out
+#BSUB -e logs/hrsprep.%J.err
+module load R/4.4.3
+RAND=$(ls application/hrs/data/randhrs*.dta | head -1)
+LW=$(ls application/hrs/data/cogfinalimp*wide*.dta | head -1)
+echo "RAND file: $RAND"; echo "Langa-Weir file: $LW"
+Rscript application/hrs/prep_hrs.R "$RAND" "$LW" application/hrs/data
