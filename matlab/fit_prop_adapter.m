@@ -20,6 +20,8 @@ function out = fit_prop_adapter(dat, opts)
 %                                 risks formula, as a naive user would.
 %   opts.threshold   0.05 (standardized scale)
 %   opts.gammaE      [0 0.25 0.5]
+%   opts.gammaE_labels  optional criterion labels, one per gammaE
+%   opts.gP_grid     optional sparsity grid (default in csm_options)
 %   opts.grid        0:0.1:6
 %   opts.cuts        optional; default [0 1 2 Inf] (the simulation partition)
 %
@@ -27,11 +29,13 @@ function out = fit_prop_adapter(dat, opts)
 K = 2;
 if isfield(opts, 'cuts'), cuts = opts.cuts; else, cuts = [0 1 2 Inf]; end
 opt = csm_options('eta', opts.threshold, 'gE', opts.gammaE);
+if isfield(opts, 'gP_grid'), opt.gP_grid = opts.gP_grid; end
 
 switch opts.penalty
     case 'gselo'
         res = csm_select(dat.Y, dat.status, dat.Z, cuts, K, opts.family, opts.tau, opt);
         crits = arrayfun(@crit_name, opts.gammaE, 'UniformOutput', false);
+        if isfield(opts, 'gammaE_labels'), crits = opts.gammaE_labels; end
     case 'none'
         res = csm_thr_mle(dat.Y, dat.status, dat.Z, cuts, K, opts.family, opts.tau, opt);
         crits = {'THR'};

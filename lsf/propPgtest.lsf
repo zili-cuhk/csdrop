@@ -1,0 +1,15 @@
+#!/bin/bash
+# Smoke test for propPg: P33 (n = 1000, p = 200) rep 1 -> results/prop_gamma_test.
+#BSUB -J propPgtest
+#BSUB -q medium
+#BSUB -W 4:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/propPgtest.%J.out
+#BSUB -e logs/propPgtest.%J.err
+module load matlab/R2025b
+time matlab -nodisplay -nosplash -singleCompThread -batch \
+  "addpath(genpath('matlab')); run_prop_fits(16001, @fit_prop_adapter, 'exp', 'P', 'chunk', 1, 'gammaE', [0 0.25 0.5 1], 'gammaCC', true, 'gPgrid', [0 0.025 0.05 0.075 0.10 0.125 0.25 0.5], 'outdir', 'prop_gamma_test')"
+cut -d, -f2,3,4,5,6,8,9 results/prop_gamma_test/sel_PROP_TRUE_P33_0001.csv
+cat results/prop_gamma_test/cif_PROP_TRUE_P33_0001.csv

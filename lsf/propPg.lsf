@@ -1,0 +1,25 @@
+#!/bin/bash
+# copHCR (PROP_TRUE) and HDCR (PROP_T00) on P01-P36 with larger EBIC model-space
+# adjustments: gamma_E in {0, 0.25, 0.5, 1} plus the Chen-Chen value
+# 1 - 1/(2 kappa) (criterion EBICcc), and the sparsity grid extended to
+# gamma_P = 0.5. 36 cells x 10 chunks of 50 reps = 360 tasks -> results/prop_gamma.
+# Summarize with analysis/agg_largep_ebic.py . prop_gamma
+#BSUB -J propPg[1-360]
+#BSUB -q medium
+#BSUB -W 24:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/propPg.%J.%I.out
+#BSUB -e logs/propPg.%J.%I.err
+TASK=$((${LSB_JOBINDEX:-1} + ${OFFSET:-0}))
+module load matlab/R2025b
+MARK=logs/propPg.done.$TASK
+rm -f $MARK
+matlab -nodisplay -nosplash -singleCompThread -batch "addpath(genpath('matlab')); run_prop_fits($TASK, @fit_prop_adapter, 'exp', 'P', 'chunk', 50, 'gammaE', [0 0.25 0.5 1], 'gammaCC', true, 'gPgrid', [0 0.025 0.05 0.075 0.10 0.125 0.25 0.5], 'outdir', 'prop_gamma'); fclose(fopen('$MARK','w'));" &
+PID=$!
+while kill -0 $PID 2>/dev/null; do
+  if [ -f $MARK ]; then sleep 30; kill -9 $PID 2>/dev/null; break; fi
+  sleep 20
+done
+echo "task $TASK finished"
