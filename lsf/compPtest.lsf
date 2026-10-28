@@ -1,0 +1,18 @@
+#!/bin/bash
+# Smoke test for the lasso comparator on the slowest larger-dimension cell
+# (P33, reps 1-2; the data are written by largeptest). Output goes to
+# results/largeptest so it does not mix with the production chunks.
+#BSUB -J compPtest
+#BSUB -q short
+#BSUB -W 1:00
+#BSUB -n 1
+#BSUB -M 8GB
+#BSUB -R "rusage[mem=8GB]"
+#BSUB -o logs/compPtest.%J.out
+#BSUB -e logs/compPtest.%J.err
+module load R/4.5.1
+time Rscript R/run_comparators.R --sid P33 --from 1 --to 2 --methods CS_LASSO
+mkdir -p results/largeptest
+cut -d, -f2,4,5,6,8,9 results/comp/sel_CS_LASSO_P33_0001.csv | grep -i "bic\|criterion"
+cat results/comp/cif_CS_LASSO_P33_0001.csv | head -12
+mv results/comp/sel_CS_LASSO_P33_0001.csv results/comp/cif_CS_LASSO_P33_0001.csv results/largeptest/

@@ -10,5 +10,5 @@
 #BSUB -o logs/genP.%J.%I.out
 #BSUB -e logs/genP.%J.%I.err
 
-module load R/4.4.3
+module load R/4.5.1
 Rscript R/generate.R --task "$LSB_JOBINDEX" --exp P --digits 8

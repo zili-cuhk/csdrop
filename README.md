@@ -72,11 +72,9 @@ Each experiment has a smoke-test script (`*test.lsf`; `largeptest` and `expGHtes
 4. After step 3, `bsub < lsf/liu.lsf` refits the selected models with Wald standard errors (`results/liu/`).
 5. `path1`, `path2`, `pathB`, `expD`, `expDm`, and `expF` write to `results/path/`, `results/pathB/`, `results/expD/`, `results/expDm/`, and `results/expF/`.
 6. `expG` and `expH` rerun the Experiment F driver (`matlab/run_expF_fits.m`) with other grids on the Experiment A datasets and write to `results/expG/` and `results/expH/`.
-7. The larger-dimension cells are run in the order `genP`, then `compP` and `propP`, then `liuP`. Their datasets take about 20 GB (covariates stored with 8 significant digits). Job arrays are limited to 1000 tasks, so `propP` (3600 tasks) and `liuP` (1800 tasks) are submitted several times with an offset, for example
+7. The larger-dimension cells are run in the order `genP`, then `compP` and `propP`, then `liuP`. Their datasets take about 20 GB (covariates stored with 8 significant digits). Job arrays are limited to 1000 tasks, so `expH` (1600 tasks) is submitted twice with an offset:
 
    ```bash
-   for o in 0 900 1800 2700; do OFFSET=$o bsub < lsf/propP.lsf; done
-   for o in 0 900; do OFFSET=$o bsub < lsf/liuP.lsf; done
    for o in 0 800; do OFFSET=$o bsub < lsf/expH.lsf; done
    ```
 

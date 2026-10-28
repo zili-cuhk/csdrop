@@ -9,7 +9,7 @@
 #BSUB -R "rusage[mem=16GB]"
 #BSUB -o logs/hrsprep.%J.out
 #BSUB -e logs/hrsprep.%J.err
-module load R/4.4.3
+module load R/4.5.1
 RAND=$(ls application/hrs/data/randhrs*.dta | head -1)
 LW=$(ls application/hrs/data/cogfinalimp*wide*.dta | head -1)
 echo "RAND file: $RAND"; echo "Langa-Weir file: $LW"

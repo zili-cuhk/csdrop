@@ -9,5 +9,5 @@
 #BSUB -o logs/compP.%J.%I.out
 #BSUB -e logs/compP.%J.%I.err
 
-module load R/4.4.3
+module load R/4.5.1
 Rscript R/run_comparators.R --task "$LSB_JOBINDEX" --exp P --methods CS_LASSO
