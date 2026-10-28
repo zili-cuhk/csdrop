@@ -95,6 +95,7 @@ python3 analysis/agg_expF.py   results/expF results/summary/expF                
 python3 analysis/agg_expF.py   results/expG results/summary/expG                 # Experiment G
 python3 analysis/agg_expH.py   results/expH results/summary/expH                 # Experiment H
 python3 analysis/agg_largep.py . results/summary/largep                          # cells P01-P36
+python3 analysis/agg_largep_gamma.py .                                         # cells P01-P36, EBIC_0.25 vs EBIC_0.5
 python3 analysis/agg_sandwich.py results/path_all.csv.gz results/expD_all.csv.gz results/pseudotrue/expD_targets.json results/summary/sandwich   # Corollary 2
 ```
 
