@@ -148,22 +148,6 @@ python3 boot_an.py                     # selection frequencies, bounds, Imbens-M
 
 Outputs are written to `application/out/`. The same analyses can be run in MATLAB with `matlab/app/tcga_check.m` and `matlab/app/tcga_path_check.m`, and the cluster bootstrap with `lsf/tcgaboot.lsf`, summarized by `lsf/tcgaagg.lsf` (`matlab/agg_tcga_boot.m`, which also reports the intervals with standard errors from the normalized interquartile range of the bootstrap replicates). The expected output is listed in `matlab/app/*_expected_python.txt`. `python3 make_boot_idx.py` writes `application/data/tcga_boot_idx.csv`, the bootstrap resampling indices used in the paper and read by `matlab/run_tcga_boot.m`.
 
-## Health and Retirement Study application
-
-The HRS data are public after free registration at https://hrsdata.isr.umich.edu and are not redistributed here. Download
-
-* the RAND HRS Longitudinal File (Stata version, `randhrs1992_2022v1.dta` or later), and
-* the Langa–Weir Classification of Cognitive Function, 1995–2020 (`cogfinalimp_9520wide.dta`),
-
-and place both files in `application/hrs/data/`. Then
-
-```bash
-bsub < lsf/hrsprep.lsf      # or: Rscript application/hrs/prep_hrs.R <RAND .dta> <Langa-Weir .dta> application/hrs/data
-bsub < lsf/hrsboot.lsf      # full data (index 1) and 200 bootstrap samples
-```
-
-`prep_hrs.R` builds the cohort of self-respondents aged 65 or older who were not demented at the 2000 interview. Event 1 is dementia (Langa–Weir classification), event 2 is death without dementia, dropout is permanent nonresponse or removal from the sample while alive, and administrative censoring is the 2020 interview. It writes `hrs_main.csv`, `hrs_sens.csv` (respondents who missed only the 2020 wave counted as dropout), `hrs_cuts.csv`, and `hrs_summary.txt`. The bootstrap reuses `matlab/run_tcga_boot.m` with the options `data`, `cutsfile`, and `out`, and `matlab/agg_tcga_boot('dir', 'results/hrs_boot', 'data', 'application/hrs/data/hrs_main.csv', 'margins', ["Dementia" "Death without dementia" "Dropout"])` summarizes it.
-
 ## License
 
 MIT License. See `LICENSE`.
